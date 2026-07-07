@@ -1,1 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Station Home Delivery — Order &amp; Pay on WhatsApp</title>
+<meta name="description" content="Order groceries and essentials from your station shops. Pay by UPI and send your order on WhatsApp — no app to install.">
+<meta name="theme-color" content="#0a7d4d">
+<link rel="canonical" href="https://dtensor.github.io/station-delivery-demo/">
+<!-- Social preview: this link is shared on WhatsApp, so give it a card -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Station Home Delivery">
+<meta property="og:description" content="Pick a shop, add items, pay by UPI, and send your order on WhatsApp.">
+<meta property="og:url" content="https://dtensor.github.io/station-delivery-demo/">
+<meta property="og:image" content="https://dtensor.github.io/station-delivery-demo/station-qr.png">
+<meta name="twitter:card" content="summary">
+<!-- Inline emoji favicon (no extra file to deploy) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%92%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f5f3ef; --card:#fff; --ink:#1d1d1f; --muted:#6b6b70;
+    --line:#e6e2da; --accent:#0a7d4d; --accent-ink:#fff; --warn:#b8860b;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.05);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.4;
+    padding-bottom:96px; -webkit-font-smoothing:antialiased;
+  }
+  header{
+    position:sticky; top:0; z-index:20; background:var(--card);
+    border-bottom:1px solid var(--line); padding:14px 16px;
+    box-shadow:0 1px 0 rgba(0,0,0,.03);
+  }
+  header h1{font-size:18px; margin:0; font-weight:700;}
+  header p{margin:2px 0 0; font-size:12px; color:var(--muted);}
+  .tabs{
+    display:flex; gap:8px; overflow-x:auto; padding:12px 16px 4px;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch;
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:0 0 auto; padding:9px 15px; border-radius:22px; border:1px solid var(--line);
+    background:var(--card); font-size:14px; font-weight:600; color:var(--muted);
+    cursor:pointer; white-space:nowrap;
+  }
+  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .items{padding:8px 16px;}
+  .item{
+    display:flex; align-items:center; gap:12px; background:var(--card);
+    border:1px solid var(--line); border-radius:14px; padding:12px 14px;
+    margin-bottom:10px; box-shadow:var(--shadow);
+  }
+  .item .meta{flex:1; min-width:0;}
+  .item .name{font-weight:600; font-size:15px;}
+  .item .price{font-size:13px; color:var(--muted); margin-top:2px;}
+  .stepper{display:flex; align-items:center; gap:0; flex:0 0 auto;}
+  .stepper button{
+    width:34px; height:34px; border-radius:9px; border:1px solid var(--line);
+    background:#fafafa; font-size:20px; line-height:1; cursor:pointer; color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stepper button:active{background:#eee;}
+  .stepper .qty{min-width:30px; text-align:center; font-weight:700; font-size:15px;}
+  .stepper .add{
+    background:var(--accent); color:#fff; border-color:var(--accent);
+    width:auto; padding:0 16px; height:34px; border-radius:9px; font-weight:700; font-size:14px;
+  }
+  .cartbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:30;
+    background:var(--card); border-top:1px solid var(--line);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    display:flex; align-items:center; gap:12px;
+    box-shadow:0 -4px 16px rgba(0,0,0,.06);
+  }
+  .cartbar .sum{flex:1;}
+  .cartbar .sum b{font-size:18px;}
+  .cartbar .sum small{display:block; color:var(--muted); font-size:12px;}
+  .btn{
+    border:none; border-radius:12px; padding:14px 18px; font-size:15px; font-weight:700;
+    cursor:pointer; background:var(--accent); color:var(--accent-ink);
+  }
+  .btn[disabled]{opacity:.4;}
+  .btn.block{display:block; width:100%; text-align:center; text-decoration:none;}
+  .btn.ghost{background:#fff; color:var(--ink); border:1px solid var(--line);}
+  .btn.wa{background:#25d366;}
+  /* sheet */
+  .overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:40;
+    display:none; align-items:flex-end;
+  }
+  .overlay.open{display:flex;}
+  .sheet{
+    background:var(--card); width:100%; border-radius:20px 20px 0 0;
+    padding:18px 16px calc(20px + env(safe-area-inset-bottom));
+    max-height:92vh; overflow-y:auto;
+  }
+  .sheet h2{font-size:17px; margin:2px 0 14px;}
+  .grab{width:40px; height:4px; background:var(--line); border-radius:3px; margin:0 auto 12px;}
+  .line{display:flex; justify-content:space-between; font-size:14px; padding:5px 0; color:var(--ink);}
+  .line.total{font-weight:800; font-size:17px; border-top:1px solid var(--line); margin-top:6px; padding-top:10px;}
+  label{display:block; font-size:13px; font-weight:600; margin:12px 0 5px;}
+  input,textarea{
+    width:100%; border:1px solid var(--line); border-radius:11px; padding:12px;
+    font-size:16px; font-family:inherit; background:#fafafa;
+  }
+  textarea{resize:vertical; min-height:64px;}
+  .qrwrap{text-align:center; margin:16px 0 6px;}
+  #qrcode{display:inline-block; padding:12px; background:#fff; border:1px solid var(--line); border-radius:14px;}
+  #qrcode img,#qrcode canvas{display:block;}
+  .hint{font-size:12px; color:var(--muted); text-align:center; margin:8px 4px 0;}
+  .warnote{
+    background:#fff8e6; border:1px solid #f0e2b8; color:#7a5d00;
+    font-size:12.5px; border-radius:11px; padding:10px 12px; margin:14px 0 4px;
+  }
+  .step-num{
+    display:inline-flex; width:20px; height:20px; border-radius:50%; background:var(--accent);
+    color:#fff; font-size:12px; font-weight:700; align-items:center; justify-content:center; margin-right:7px;
+  }
+  .closex{position:absolute; right:16px; top:14px; font-size:24px; color:var(--muted); background:none; border:none; cursor:pointer;}
+  .empty{text-align:center; color:var(--muted); padding:40px 20px; font-size:14px;}
+  .spacer{height:8px;}
+</style>
+</head>
+<body>
 
+<header>
+  <h1 id="stationName">Station Home Delivery</h1>
+  <p id="shopLabel">Pick a shop, add items, pay & send your order on WhatsApp.</p>
+</header>
+
+<div class="tabs" id="tabs"></div>
+<div class="items" id="items"></div>
+
+<div class="cartbar">
+  <div class="sum" aria-live="polite">
+    <b id="cartTotal">₹0</b>
+    <small id="cartCount">Cart empty</small>
+  </div>
+  <button class="btn" id="checkoutBtn" disabled onclick="openCheckout()">Review & Pay</button>
+</div>
+
+<!-- Checkout sheet -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <button class="closex" onclick="closeCheckout()" aria-label="Close">×</button>
+    <div class="grab"></div>
+    <h2 id="sheetShop">Your order</h2>
+
+    <div id="orderLines"></div>
+
+    <label for="custName">Your name</label>
+    <input id="custName" placeholder="e.g. Anita, Block C" autocomplete="name">
+    <label for="custAddr">Delivery address (flat / block / landmark)</label>
+    <textarea id="custAddr" placeholder="e.g. Flat 204, B-Block, near water tank"></textarea>
+
+    <button class="btn ghost block" id="locBtn" style="margin-top:10px;" onclick="getLoc()">📍 Add my location pin (GPS)</button>
+    <div class="hint" id="locStatus">Optional but helps the rider find you. The pin travels inside the order.</div>
+
+    <div class="spacer"></div>
+
+    <!-- step 1: pay -->
+    <p style="font-weight:700;font-size:15px;margin:14px 0 4px;"><span class="step-num">1</span>Pay <span id="payAmt">₹0</span></p>
+    <a class="btn block" id="payBtn" href="#">Pay now in UPI app</a>
+    <div class="qrwrap">
+      <div id="qrcode"></div>
+      <div class="hint">…or scan this with any UPI app (GPay / PhonePe / Paytm)</div>
+    </div>
+
+    <!-- step 2: send -->
+    <p style="font-weight:700;font-size:15px;margin:18px 0 4px;"><span class="step-num">2</span>Send your order</p>
+    <a class="btn block wa" id="waBtn" href="#" target="_blank" rel="noopener">After paying, send order on WhatsApp →</a>
+    <div class="warnote">
+      In WhatsApp, <b>attach your UPI payment screenshot</b> before sending, so the shop can confirm and dispatch quickly. You can also tap 📎 → <b>Location</b> to drop a live pin in the chat.
+    </div>
+  </div>
+</div>
+
+<!-- QR library (fallback; the "Pay now" button works even without it). Pinned version. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+/* =========================================================================
+   EDIT THIS BLOCK ONLY.  Everything below it is the engine — leave it alone.
+   - vpa  : the shop's UPI ID (e.g. shopname@okhdfcbank)
+   - payee: name shown in the customer's UPI app
+   - wa   : the shop's WhatsApp number in international form, digits only
+            India = 91 + 10-digit number, e.g. 919812345678
+   - items: [name, price-in-rupees]
+   ========================================================================= */
+const CONFIG = {
+  station: "Kalimpong Military Station",
+  shops: [
+    { id:"bakery", name:"🍞 Bakery", vpa:"bakery@oktest", payee:"Sunrise Bakery", wa:"919902681123",
+      items:[
+        ["Bread — White (400g)",40], ["Bread — Brown (400g)",48], ["Bread — Multigrain",55],
+        ["Pav (6 pc)",30], ["Burger Bun (4 pc)",35], ["Fruit Bun",18], ["Cream Bun",25],
+        ["Veg Puff",25], ["Paneer Puff",35], ["Egg Puff",30], ["Veg Patties",30],
+        ["Khari (250g)",60], ["Rusk (200g)",45], ["Butter Cookies (250g)",90],
+        ["Choco Cookies (250g)",110], ["Brownie (pc)",45], ["Chocolate Cupcake",35],
+        ["Donut",40], ["Pineapple Pastry",50], ["Black Forest Pastry",60],
+        ["Egg Cake (0.5kg)",320], ["Eggless Cake (0.5kg)",380], ["Birthday Cake (1kg)",650]
+      ] },
