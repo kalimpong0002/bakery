@@ -194,7 +194,7 @@ const CONFIG = {
   shops: [
     { id:"bakery", name:"🍞 Bakery", vpa:"bakery@oktest", payee:"Sunrise Bakery", wa:"919902681123",
       items:[
-        ["BHART (400g)",40], ["ANKUSH(400g)",48], ["Bread — Multigrain",55],
+        ["BHART — White (400g)",40], ["ANKUSH — LION (400g)",80], ["Bread — Multigrain",55],
         ["Pav (6 pc)",30], ["Burger Bun (4 pc)",35], ["Fruit Bun",18], ["Cream Bun",25],
         ["Veg Puff",25], ["Paneer Puff",35], ["Egg Puff",30], ["Veg Patties",30],
         ["Khari (250g)",60], ["Rusk (200g)",45], ["Butter Cookies (250g)",90],
@@ -202,3 +202,246 @@ const CONFIG = {
         ["Donut",40], ["Pineapple Pastry",50], ["Black Forest Pastry",60],
         ["Egg Cake (0.5kg)",320], ["Eggless Cake (0.5kg)",380], ["Birthday Cake (1kg)",650]
       ] },
+
+    { id:"dosa", name:"🥞 South Indian", vpa:"dosacorner@oktest", payee:"Anna's Dosa Corner", wa:"919902681123",
+      items:[
+        ["Plain Dosa",50], ["Masala Dosa",70], ["Onion Dosa",75], ["Mysore Masala Dosa",90],
+        ["Rava Dosa",80], ["Rava Masala Dosa",95], ["Set Dosa (3)",70], ["Ghee Roast Dosa",110],
+        ["Idli (2 pc)",40], ["Idli (4 pc)",70], ["Sambar Idli (2)",55], ["Medu Vada (2 pc)",45],
+        ["Sambar Vada (2)",60], ["Onion Uttapam",80], ["Veg Uttapam",90], ["Ven Pongal",70],
+        ["Rava Upma",55], ["Curd Rice",60], ["Lemon Rice",60], ["Mini Tiffin (combo)",130],
+        ["Filter Coffee",30], ["Masala Chai",20], ["Extra Sambar",15], ["Extra Chutney",10]
+      ] },
+
+    { id:"grocery", name:"🛒 Grocery", vpa:"grocery@oktest", payee:"Daily Fresh Grocery", wa:"919902681123",
+      items:[
+        ["Milk — Toned 500ml",27], ["Milk — Full Cream 500ml",35], ["Milk — Toned 1L",54],
+        ["Curd 400g",40], ["Paneer 200g",90], ["Butter 100g",58], ["Eggs (6)",48], ["Eggs (12)",92],
+        ["Sugar 1kg",55], ["Salt 1kg",28], ["Rice — Sona Masoori 1kg",72], ["Atta 1kg",52],
+        ["Toor Dal 500g",95], ["Cooking Oil 1L",150], ["Tea Powder 250g",140], ["Maggi (4-pack)",60],
+        ["Parle-G (big)",30], ["Bananas (dozen)",60], ["Onion 1kg",40], ["Potato 1kg",35],
+        ["Tomato 1kg",45], ["Ginger-Garlic 100g",25], ["Green Chilli 100g",15], ["Lemon (4)",20],
+        ["Coriander (bunch)",15], ["Bread (400g)",40], ["Drinking Water 1L",20]
+      ] },
+
+    { id:"daily", name:"📒 Stationery & Daily", vpa:"dailyneeds@oktest", payee:"Sharma Daily Needs", wa:"919902681123",
+      items:[
+        ["Notebook — Single Line",40], ["Notebook — Long",55], ["A4 Paper (50 sheets)",60],
+        ["Ball Pen (pack of 5)",50], ["Gel Pen",15], ["Pencil (pack of 10)",45], ["Eraser + Sharpener",20],
+        ["Marker Pen",25], ["Glue Stick",30], ["Cello Tape",25], ["Stapler + Pins",80],
+        ["Chart Paper",15], ["Gift Wrap Sheet",20], ["Ribbon Roll",25], ["Birthday Candles",30],
+        ["Balloons (pack of 25)",50], ["Paper Plates (25)",60], ["Paper Cups (50)",55],
+        ["Agarbatti (pack)",35], ["Matchbox (10)",10], ["Candles (pack of 6)",30], ["Phenyl 500ml",60],
+        ["Dishwash Bar",20], ["Toilet Cleaner 500ml",85], ["Broom",90], ["AA Batteries (4)",80],
+        ["Bulb — LED 9W",75], ["Envelopes (pack of 10)",25]
+      ] },
+
+    { id:"momos", name:"🥟 Momos", vpa:"momohouse@oktest", payee:"Himalaya Momo House", wa:"919902681123",
+      items:[
+        ["Veg Momos (6)",60], ["Veg Momos (10)",95], ["Paneer Momos (6)",80], ["Paneer Momos (10)",130],
+        ["Corn-Cheese Momos (6)",90], ["Chicken Momos (6)",90], ["Chicken Momos (10)",150],
+        ["Fried Veg Momos (6)",75], ["Fried Chicken Momos (6)",105], ["Tandoori Veg Momos (6)",110],
+        ["Tandoori Chicken Momos (6)",140], ["Schezwan Veg Momos (6)",80], ["Steam Platter (12 mix)",170],
+        ["Veg Spring Roll (4)",70], ["Momo Soup (veg)",50], ["Momo Soup (chicken)",70],
+        ["Extra Chutney",10], ["Mayo Dip",15], ["Schezwan Dip",15]
+      ] },
+  ]
+};
+
+/* =========================== ENGINE (do not edit) ======================== */
+const rupee = n => "₹" + (Math.round(n*100)/100).toLocaleString("en-IN");
+const enc = encodeURIComponent;
+let currentShop = CONFIG.shops[0];
+let cart = {}; // key `${shopId}__${index}` -> qty  (single shop enforced)
+
+document.getElementById("stationName").textContent = CONFIG.station;
+
+function renderTabs(){
+  const t = document.getElementById("tabs");
+  t.innerHTML = "";
+  CONFIG.shops.forEach(s => {
+    const b = document.createElement("button");
+    b.className = "tab" + (s.id===currentShop.id ? " active" : "");
+    b.textContent = s.name;
+    b.onclick = () => switchShop(s);
+    t.appendChild(b);
+  });
+}
+
+function switchShop(s){
+  // one shop per order: switching shops with items asks to clear
+  if (cartShopId() && cartShopId() !== s.id && Object.keys(cart).length){
+    if (!confirm("Each order is from one shop. Switch to " + s.name.replace(/^[^\s]+\s/,"") + " and clear your current cart?")) return;
+    cart = {};
+  }
+  currentShop = s;
+  renderTabs(); renderItems(); renderCart();
+}
+
+function cartShopId(){
+  const k = Object.keys(cart)[0];
+  return k ? k.split("__")[0] : null;
+}
+
+function renderItems(){
+  const wrap = document.getElementById("items");
+  wrap.innerHTML = "";
+  currentShop.items.forEach((it,i) => {
+    const key = currentShop.id + "__" + i;
+    const qty = cart[key] || 0;
+    const row = document.createElement("div");
+    row.className = "item";
+    row.innerHTML =
+      '<div class="meta"><div class="name">'+it[0]+'</div><div class="price">'+rupee(it[1])+'</div></div>' +
+      '<div class="stepper">' +
+        (qty>0
+          ? '<button aria-label="Decrease quantity" onclick="chg(\''+key+'\',-1)">−</button><span class="qty">'+qty+'</span><button aria-label="Increase quantity" onclick="chg(\''+key+'\',1)">+</button>'
+          : '<button class="add" onclick="chg(\''+key+'\',1)">Add</button>') +
+      '</div>';
+    wrap.appendChild(row);
+  });
+}
+
+function chg(key,d){
+  const q = (cart[key]||0) + d;
+  if (q<=0) delete cart[key]; else cart[key]=q;
+  renderItems(); renderCart();
+}
+
+function cartItems(){
+  return Object.entries(cart).map(([key,qty])=>{
+    const i = +key.split("__")[1];
+    const it = currentShop.items[i];
+    return { name:it[0], price:it[1], qty, sub:it[1]*qty };
+  });
+}
+function cartTotal(){ return cartItems().reduce((a,c)=>a+c.sub,0); }
+
+function renderCart(){
+  const items = cartItems();
+  const total = cartTotal();
+  const count = items.reduce((a,c)=>a+c.qty,0);
+  document.getElementById("cartTotal").textContent = rupee(total);
+  document.getElementById("cartCount").textContent =
+    count ? (count + " item" + (count>1?"s":"") + " · " + currentShop.name.replace(/^[^\s]+\s/,"")) : "Cart empty";
+  document.getElementById("checkoutBtn").disabled = count===0;
+}
+
+/* ----- checkout sheet ----- */
+function buildOrderId(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,"0");
+  return p(d.getDate())+p(d.getMonth()+1)+"-"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());
+}
+
+function openCheckout(){
+  const items = cartItems();
+  if (!items.length) return;
+  const total = cartTotal();
+  document.getElementById("sheetShop").textContent = currentShop.name + " — your order";
+
+  // order lines
+  const ol = document.getElementById("orderLines");
+  ol.innerHTML = items.map(c =>
+    '<div class="line"><span>'+c.qty+'× '+c.name+'</span><span>'+rupee(c.sub)+'</span></div>'
+  ).join("") + '<div class="line total"><span>Total</span><span>'+rupee(total)+'</span></div>';
+
+  // restore saved name/address/location
+  document.getElementById("custName").value = localStorage.getItem("sd_name") || "";
+  document.getElementById("custAddr").value = localStorage.getItem("sd_addr") || "";
+  restoreLocUI();
+
+  const orderId = buildOrderId();
+  document.getElementById("payAmt").textContent = rupee(total);
+
+  // UPI deep link — exact amount pre-filled, paid straight to the shop's VPA
+  const note = "Order " + orderId + " " + currentShop.payee;
+  const upi = "upi://pay?pa="+enc(currentShop.vpa)+"&pn="+enc(currentShop.payee)+
+              "&am="+total.toFixed(2)+"&cu=INR&tn="+enc(note);
+  document.getElementById("payBtn").href = upi;
+
+  // QR (fallback path for scanning from another device)
+  const box = document.getElementById("qrcode");
+  box.innerHTML = "";
+  try { new QRCode(box, { text: upi, width:180, height:180, correctLevel: QRCode.CorrectLevel.M }); }
+  catch(e){ box.innerHTML = '<div class="hint">Use the green "Pay now" button above.</div>'; }
+
+  // WhatsApp order message → goes to THIS shop's number
+  _order = { orderId, items, total };
+  refreshWa();
+  document.getElementById("custName").oninput =
+  document.getElementById("custAddr").oninput = refreshWa;
+
+  document.getElementById("overlay").classList.add("open");
+}
+
+let _order = null;  // current checkout context, used by refreshWa + getLoc
+
+function refreshWa(){
+  if (!_order) return;
+  const { orderId, items, total } = _order;
+  const name = document.getElementById("custName").value.trim();
+  const addr = document.getElementById("custAddr").value.trim();
+  localStorage.setItem("sd_name", name);
+  localStorage.setItem("sd_addr", addr);
+  const geo = getSavedGeo();
+  const mapLine = geo ? "\n🗺️ Map: https://maps.google.com/?q="+geo.lat+","+geo.lng : "";
+  const lines = items.map(c => c.qty+"× "+c.name+" — "+rupee(c.sub)).join("\n");
+  const msg =
+    "🛒 New Order #"+orderId+"\n"+
+    "🏪 "+currentShop.payee+"\n"+
+    "————————\n"+
+    lines+"\n"+
+    "————————\n"+
+    "Total: "+rupee(total)+"\n"+
+    "✅ Paid via UPI (screenshot attached)\n\n"+
+    "👤 "+(name||"—")+"\n"+
+    "📍 "+(addr||"—")+mapLine;
+  document.getElementById("waBtn").href =
+    "https://wa.me/"+currentShop.wa+"?text="+enc(msg);
+}
+
+/* ----- GPS location pin ----- */
+function getSavedGeo(){
+  try { return JSON.parse(localStorage.getItem("sd_geo") || "null"); } catch(e){ return null; }
+}
+function restoreLocUI(){
+  const geo = getSavedGeo();
+  const btn = document.getElementById("locBtn");
+  const st = document.getElementById("locStatus");
+  if (geo){
+    btn.textContent = "📍 Update my location pin";
+    st.innerHTML = '✅ Location pin added — <a href="https://maps.google.com/?q='+geo.lat+','+geo.lng+'" target="_blank" rel="noopener">preview</a>. It will be sent inside the order.';
+  } else {
+    btn.textContent = "📍 Add my location pin (GPS)";
+    st.textContent = "Optional but helps the rider find you. The pin travels inside the order.";
+  }
+}
+function getLoc(){
+  const st = document.getElementById("locStatus");
+  if (!navigator.geolocation){ st.textContent = "This phone/browser can't share GPS. Type your address above instead."; return; }
+  st.textContent = "Getting your location… allow the permission popup.";
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const geo = { lat:+pos.coords.latitude.toFixed(6), lng:+pos.coords.longitude.toFixed(6) };
+      localStorage.setItem("sd_geo", JSON.stringify(geo));
+      restoreLocUI(); refreshWa();
+    },
+    err => {
+      st.textContent = (err.code===1)
+        ? "Location permission denied. You can still type your address above, or drop a WhatsApp pin in the chat."
+        : "Couldn't get location. Type your address above instead.";
+    },
+    { enableHighAccuracy:true, timeout:10000, maximumAge:60000 }
+  );
+}
+
+function closeCheckout(){ document.getElementById("overlay").classList.remove("open"); }
+document.getElementById("overlay").addEventListener("click", e => {
+  if (e.target.id === "overlay") closeCheckout();
+});
+
+renderTabs(); renderItems(); renderCart();
+</script>
+</body>
+</html>
