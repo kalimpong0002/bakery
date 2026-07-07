@@ -1,1 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make the Station QR Poster</title>
+<style>
+  body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f5f3ef;margin:0;padding:24px;color:#1d1d1f;}
+  .panel{max-width:520px;margin:0 auto 18px;background:#fff;border:1px solid #e6e2da;border-radius:16px;padding:20px;}
+  h1{font-size:19px;margin:0 0 6px;}
+  p{color:#6b6b70;font-size:14px;margin:6px 0;}
+  label{display:block;font-weight:600;font-size:13px;margin:14px 0 5px;}
+  input{width:100%;padding:12px;border:1px solid #e6e2da;border-radius:11px;font-size:15px;background:#fafafa;}
+  button{margin-top:14px;width:100%;padding:13px;border:none;border-radius:11px;background:#0a7d4d;color:#fff;font-weight:700;font-size:15px;cursor:pointer;}
+  .printbtn{background:#1d1d1f;}
+  /* the printable poster */
+  #poster{max-width:520px;margin:0 auto;background:#fff;border:1px solid #e6e2da;border-radius:16px;padding:34px 24px;text-align:center;}
+  #poster .station{font-size:26px;font-weight:800;margin:0 0 4px;}
+  #poster .tag{font-size:15px;color:#6b6b70;margin:0 0 22px;}
+  #qr{display:inline-block;padding:16px;border:1px solid #e6e2da;border-radius:14px;}
+  #poster .scan{font-size:18px;font-weight:700;margin:20px 0 4px;}
+  #poster .sub{font-size:13px;color:#6b6b70;}
+  @media print{
+    body{background:#fff;padding:0;}
+    .panel{display:none;}
+    #poster{border:none;box-shadow:none;}
+  }
+</style>
+</head>
+<body>
 
+<div class="panel">
+  <h1>Make your Station QR poster</h1>
+  <p>Paste the web address where you uploaded <b>index.html</b> (e.g. your GitHub Pages or Netlify link). Then print this page and pin the QR in the WhatsApp group + on the notice board.</p>
+  <label for="url">Menu page link</label>
+  <input id="url" placeholder="https://your-station.github.io/" >
+  <label for="station">Station name (shown on poster)</label>
+  <input id="station" value="Kalimpong Military Station">
+  <button onclick="make()">Generate QR</button>
+  <button class="printbtn" onclick="window.print()">Print poster</button>
+</div>
+
+<div id="poster">
+  <p class="station" id="pStation">Kalimpong Military Station</p>
+  <p class="tag">Home Delivery</p>
+  <div id="qr"></div>
+  <p class="scan">📷 Scan to order</p>
+  <p class="sub">Bakery · South Indian · Grocery · Daily Needs · Momos</p>
+  <p class="sub">Pay the shop directly · delivered to your door</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+function make(){
+  const url = document.getElementById("url").value.trim();
+  document.getElementById("pStation").textContent = document.getElementById("station").value.trim() || "Station";
+  const box = document.getElementById("qr");
+  box.innerHTML = "";
+  if(!url){ box.innerHTML = "<p style='color:#b00'>Enter the menu link first.</p>"; return; }
+  new QRCode(box, { text:url, width:260, height:260, correctLevel:QRCode.CorrectLevel.H });
+}
+</script>
+</body>
+</html>
