@@ -1,1 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalimpong Military Station — Order QR</title>
+<style>
+  body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f5f3ef;margin:0;padding:24px;color:#1d1d1f;-webkit-font-smoothing:antialiased;}
+  .poster{max-width:520px;margin:0 auto;background:#fff;border:1px solid #e6e2da;border-radius:20px;
+    padding:38px 26px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08),0 12px 32px rgba(0,0,0,.06);}
+  .badge{display:inline-block;background:#0a7d4d;color:#fff;font-size:12px;font-weight:700;letter-spacing:.06em;
+    padding:6px 14px;border-radius:20px;text-transform:uppercase;}
+  .station{font-size:30px;font-weight:800;margin:16px 0 2px;}
+  .tag{font-size:16px;color:#6b6b70;margin:0 0 26px;}
+  #qr{display:inline-block;padding:18px;border:1px solid #e6e2da;border-radius:16px;background:#fff;}
+  #qr img,#qr canvas{display:block;}
+  .scan{font-size:20px;font-weight:800;margin:24px 0 4px;}
+  .shops{font-size:14px;color:#1d1d1f;margin:6px 0 2px;font-weight:600;}
+  .sub{font-size:13px;color:#6b6b70;margin:4px 12px 0;line-height:1.5;}
+  .link{font-size:12px;color:#0a7d4d;word-break:break-all;margin-top:14px;}
+  .note{max-width:520px;margin:14px auto 0;font-size:12.5px;color:#6b6b70;text-align:center;}
+  @media print{ body{background:#fff;padding:0;} .poster{border:none;box-shadow:none;} .note{display:none;} }
+</style>
+</head>
+<body>
 
+<div class="poster">
+  <span class="badge">Home Delivery</span>
+  <p class="station">Kalimpong Military Station</p>
+  <p class="tag">Order from your favourite shops — delivered to your door</p>
+  <div id="qr"></div>
+  <p class="scan">📷 Scan to order</p>
+  <p class="shops">🍞 Bakery · 🥞 South Indian · 🛒 Grocery · 📒 Daily Needs · 🥟 Momos</p>
+  <p class="sub">Open the camera or any UPI app, scan, pick your items, pay the shop, done.<br>No app to download. Works on every phone.</p>
+  <p class="link">dtensor.github.io/station-delivery-demo</p>
+</div>
+
+<p class="note">Tip: screenshot this page (or print it) and share the QR in your WhatsApp group. Re-scan it yourself first to confirm it opens the menu.</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  // Pre-filled for the live test deployment — scanning opens the order menu.
+  var MENU_URL = "https://dtensor.github.io/station-delivery-demo/";
+  new QRCode(document.getElementById("qr"), { text: MENU_URL, width: 280, height: 280, correctLevel: QRCode.CorrectLevel.H });
+</script>
+</body>
+</html>
